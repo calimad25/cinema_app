@@ -81,10 +81,11 @@ class Card:
         cursor.execute("""
         SELECT balance FROM card WHERE type=? and number=? and cvc=? and holder=?
         """, [self.type, self.number, self.cvc, self.holder])
-        result = cursor.fetchall()[0][0]
+        result = cursor.fetchall()  # in case data is not correct it just returns an empty list, no error
+        # if you put [0][0] here, and the data doesn't match => error in code and crash cuz it expects a value.
 
-        if result:
-            balance = result  # or here [0][0] same thing
+        if result:  # so that the "There was a problem with your card" can be executed. If empty list, it means False
+            balance = result[0][0]  # extract the value from list only after we make sure that the data is correct
             if balance >= price:
                 connection.execute("""
                 UPDATE Card SET balance = ? WHERE type=? and number=? and cvc=? and holder=?
@@ -92,6 +93,7 @@ class Card:
                 connection.commit()
                 connection.close()
                 return True
+
 
 class Ticket:
     """Represents the digital ticket"""
