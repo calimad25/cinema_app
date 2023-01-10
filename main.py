@@ -11,8 +11,16 @@ class User:
 
     def buy(self, seat, card):
         """Buy the ticket if the seat is not occupied and the card is valid"""
-        pass
-
+        if seat.is_free():
+            if card.validate(price=seat.get_price()):
+                seat.occupy()
+                ticket = Ticket(user=self, price=seat.get_price(), seat_nr=seat.seat_id)
+                ticket.to_pdf()
+                return "Purchase successful!"
+            else:
+                return "There was a problem with your card."
+        else:
+            return "Seat is taken!"
 
 class Seat:
     """Represents a cinema seat that the user can choose"""
@@ -71,15 +79,15 @@ class Card:
         connection = sqlite3.connect("banking.db")
         cursor = connection.cursor()
         cursor.execute("""
-        SELECT balance FROM card WHERE type=? number=? and cvc=? and holder=?
+        SELECT balance FROM card WHERE type=? and number=? and cvc=? and holder=?
         """, [self.type, self.number, self.cvc, self.holder])
         result = cursor.fetchall()
 
         if result:
             balance = result[0][0]
-            if balance >= result:
+            if balance >= price:
                 connection.execute("""
-                UPDATE Card SET balance = ? WHERE type=? and number=? cvc=? and holder=?
+                UPDATE Card SET balance = ? WHERE type=? and number=? and cvc=? and holder=?
                 """, [balance-price, self.type, self.number, self.cvc, self.holder])
                 connection.commit()
                 connection.close()
@@ -116,11 +124,11 @@ class Ticket:
         pdf.set_font(family="Times", style="B", size=14)
         pdf.cell(w=100, h=25, txt="Price: ", border=1)
         pdf.set_font(family="Times", style="B", size=12)
-        pdf.cell(w=0, h=25, txt=self.price, border=1, ln=1)
+        pdf.cell(w=0, h=25, txt=str(self.price), border=1, ln=1)  # str!!!
         pdf.cell(w=0, h=5, txt="", border=0, ln=1)
 
         pdf.set_font(family="Times", style="B", size=14)
-        pdf.cell(w=100, h=25, txt="Price: ", border=1)
+        pdf.cell(w=100, h=25, txt="Seat: ", border=1)
         pdf.set_font(family="Times", style="B", size=12)
         pdf.cell(w=0, h=25, txt=self.seat_nr, border=1, ln=1)
         pdf.cell(w=0, h=5, txt="", border=0, ln=1)
@@ -141,3 +149,5 @@ if __name__ == "__main__":
     user = User(name=name)
     seat = Seat(seat_id=seat_id)
     card = Card(type=card_type, number=card_number, cvc=card_cvc, holder=card_holder)
+
+    print(user.buy(seat=seat, card=card))
