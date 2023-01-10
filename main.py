@@ -81,10 +81,10 @@ class Card:
         cursor.execute("""
         SELECT balance FROM card WHERE type=? and number=? and cvc=? and holder=?
         """, [self.type, self.number, self.cvc, self.holder])
-        result = cursor.fetchall()
+        result = cursor.fetchall()[0][0]
 
         if result:
-            balance = result[0][0]
+            balance = result  # or here [0][0] same thing
             if balance >= price:
                 connection.execute("""
                 UPDATE Card SET balance = ? WHERE type=? and number=? and cvc=? and holder=?
